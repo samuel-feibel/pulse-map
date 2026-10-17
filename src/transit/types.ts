@@ -11,6 +11,8 @@ export interface Line {
 export interface Station {
   readonly id: string
   readonly position: LngLat
+  /** A major station (drawn as a ring) or a minor street stop (a small dot). Defaults to 'station'. */
+  readonly kind?: 'station' | 'stop'
 }
 
 export interface Vehicle {

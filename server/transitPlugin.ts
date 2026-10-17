@@ -22,7 +22,7 @@ const API_511 = 'https://api.511.org/transit'
 const VEHICLE_REFRESH_MS = 75_000
 const RAIL_TTL_MS = 7 * 24 * 60 * 60_000
 /** Bump when the rail extraction changes, so extracts are rebuilt from the (still cached) downloads. */
-const RAIL_FORMAT = 2
+const RAIL_FORMAT = 3
 /** Keep this many 511 requests in hand for the weekly schedule download. */
 const BUDGET_RESERVE = 5
 const RATE_LIMITED_PAUSE_MS = 15 * 60_000
@@ -41,12 +41,12 @@ interface Agency {
 }
 
 const AGENCIES: Readonly<Record<string, Agency>> = {
-  // Muni: light rail and the F line (route type 0) plus cable cars (5). Stations: only the named
-  // Metro stations (subway, Central Subway, Glen Park), not every street-corner stop.
+  // Muni: light rail and the F line (route type 0) plus cable cars (5). Every stop is shown; the named
+  // Metro stations (subway, Central Subway, Glen Park) are major, street-corner stops minor.
   SF: {
     feedUrl: (key) => `${API_511}/datafeeds?api_key=${key}&operator_id=SF`,
     feedNeedsKey: true,
-    rail: { prefix: 'SF', routeTypes: ['0', '5'], stationRouteTypes: ['0'], stationNamePattern: 'Station' },
+    rail: { prefix: 'SF', routeTypes: ['0', '5'], stationRouteTypes: ['0', '5'], majorStationPattern: 'Station' },
     liveVehicles: 'SF',
   },
   // BART publishes its own GTFS feed (no key needed) but no live train positions.

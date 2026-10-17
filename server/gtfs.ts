@@ -1,4 +1,5 @@
 import type { Timetable } from '../src/transit/schedule'
+import { distanceMeters } from '../src/geo'
 import type { Line, Station } from '../src/transit/types'
 
 /** The GTFS text files this needs, as raw CSV. */
@@ -22,8 +23,8 @@ export interface RailOptions {
   readonly stationRouteTypes: readonly string[]
   /** Use the feed's parent stations (location_type 1) instead, as BART publishes them. */
   readonly useParentStations?: boolean
-  /** Keep only stops whose name matches this pattern (e.g. 'Station' skips street-corner stops). */
-  readonly stationNamePattern?: string
+  /** Stops whose name matches are major stations; the rest are minor street stops. All major if omitted. */
+  readonly majorStationPattern?: string
 }
 
 export interface RailNetwork {
@@ -114,10 +115,23 @@ function shapeCoordinates(shapes: readonly Row[], shapeId: string): [number, num
     .map((p) => [round6(p.shape_pt_lon), round6(p.shape_pt_lat)])
 }
 
-const toStation = (prefix: string, stop: Row): Station => ({
+const toStation = (prefix: string, stop: Row, kind: Station['kind']): Station => ({
   id: `${prefix}:${stop.stop_id}`,
   position: { lng: round6(stop.stop_lon), lat: round6(stop.stop_lat) },
+  kind,
 })
+
+/** Stops closer than this are the same corner served by different lines, and are drawn once. */
+const MERGE_METERS = 30
+
+/** Drops stops right next to one already kept, keeping major stations over minor stops. */
+function mergeNearby(stations: readonly Station[]): Station[] {
+  const majorFirst = [...stations].sort((a, b) => Number(a.kind === 'stop') - Number(b.kind === 'stop'))
+  return majorFirst.reduce<Station[]>(
+    (kept, s) => (kept.some((k) => distanceMeters(k.position, s.position) < MERGE_METERS) ? kept : [...kept, s]),
+    [],
+  )
+}
 
 /** Reduces a whole GTFS feed to just its rail lines (one shape per route) and stations. */
 export function buildRailNetwork(files: GtfsFiles, options: RailOptions): RailNetwork {
@@ -133,17 +147,18 @@ export function buildRailNetwork(files: GtfsFiles, options: RailOptions): RailNe
 
   const stops = parseCsv(files.stops)
   if (options.useParentStations) {
-    return { lines: lineList, stations: stops.filter((s) => s.location_type === '1').map((s) => toStation(options.prefix, s)) }
+    const parents = stops.filter((s) => s.location_type === '1').map((s) => toStation(options.prefix, s, 'station'))
+    return { lines: lineList, stations: parents }
   }
   const stationTrips = new Set(
     reps.filter((r) => options.stationRouteTypes.includes(r.route.route_type)).map((r) => r.tripId),
   )
   const stopIds = new Set(rowsWhere(files.stopTimes, 'trip_id', stationTrips).map((st) => st.stop_id))
-  const named = options.stationNamePattern ? new RegExp(options.stationNamePattern) : null
+  const major = options.majorStationPattern ? new RegExp(options.majorStationPattern) : null
   const stations = stops
-    .filter((s) => stopIds.has(s.stop_id) && (!named || named.test(s.stop_name)))
-    .map((s) => toStation(options.prefix, s))
-  return { lines: lineList, stations }
+    .filter((s) => stopIds.has(s.stop_id))
+    .map((s) => toStation(options.prefix, s, !major || major.test(s.stop_name) ? 'station' : 'stop'))
+  return { lines: lineList, stations: mergeNearby(stations) }
 }
 
 const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const

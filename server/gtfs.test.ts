@@ -71,14 +71,40 @@ describe('buildRailNetwork', () => {
     expect(network.stations.map((s) => s.id).sort()).toEqual(['SF:s1', 'SF:s2'])
   })
 
-  test('can keep only stops whose name marks them as stations (skipping street-corner stops)', () => {
-    const named = buildRailNetwork(files, { prefix: 'SF', routeTypes: ['0'], stationRouteTypes: ['0'], stationNamePattern: 'Embarcadero' })
-    expect(named.stations.map((s) => s.id)).toEqual(['SF:s1'])
+  test('marks named stations as major and every other stop as minor', () => {
+    const tiered = buildRailNetwork(files, { prefix: 'SF', routeTypes: ['0', '5'], stationRouteTypes: ['0', '5'], majorStationPattern: 'Embarcadero' })
+    const kinds = Object.fromEntries(tiered.stations.map((s) => [s.id, s.kind]))
+    expect(kinds).toEqual({ 'SF:s1': 'station', 'SF:s2': 'stop', 'SF:s3': 'stop' })
+  })
+
+  test('merges stops at the same corner from different lines, keeping the major one', () => {
+    const corner: GtfsFiles = {
+      ...files,
+      routes: 'route_id,route_short_name,route_type,route_color\nPH,PH,5,B49A36\nPM,PM,5,B49A36\n',
+      trips: 'route_id,service_id,trip_id,direction_id,shape_id\nPH,wk,h1,0,shapeP\nPM,wk,m1,0,shapeP\n',
+      stops: [
+        'stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station',
+        'a,Powell St & Market St,37.7850,-122.4078,0,',
+        'b,Powell Station,37.78505,-122.40785,0,',
+        'c,Powell St & Bay St,37.8050,-122.4120,0,',
+      ].join('\n'),
+      stopTimes: [
+        'trip_id,arrival_time,departure_time,stop_id,stop_sequence',
+        'h1,7:00:00,7:00:00,a,1',
+        'h1,7:10:00,7:10:00,c,2',
+        'm1,7:00:00,7:00:00,b,1',
+      ].join('\n'),
+    }
+    const merged = buildRailNetwork(corner, { prefix: 'SF', routeTypes: ['5'], stationRouteTypes: ['5'], majorStationPattern: 'Station' })
+    expect(merged.stations.map((s) => [s.id, s.kind]).sort()).toEqual([
+      ['SF:b', 'station'],
+      ['SF:c', 'stop'],
+    ])
   })
 
   test('can use parent stations instead (as BART publishes them)', () => {
     const parents = buildRailNetwork(files, { prefix: 'BA', routeTypes: ['0'], stationRouteTypes: [], useParentStations: true })
-    expect(parents.stations).toEqual([{ id: 'BA:p1', position: { lng: -122.4, lat: 37.7 } }])
+    expect(parents.stations).toEqual([{ id: 'BA:p1', position: { lng: -122.4, lat: 37.7 }, kind: 'station' }])
   })
 })
 
