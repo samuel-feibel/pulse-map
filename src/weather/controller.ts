@@ -13,7 +13,7 @@ import {
 } from './overrides'
 import { lightingForSunAltitude } from './sky'
 import type { Weather } from './types'
-import { createToast } from '../ui/toast'
+import type { ReportDemo } from '../ui/demoBadge'
 import { createWeatherCanvas } from './weatherCanvas'
 
 /** Open-Meteo refreshes current conditions every 15 minutes. */
@@ -23,7 +23,6 @@ const WEATHER_RETRY_MS = 60_000
 export interface WeatherElements extends AtmosphereElements {
   readonly canvas: HTMLCanvasElement
   readonly flash: HTMLElement
-  readonly toast: HTMLElement
 }
 
 const WEATHER_NAMES = Object.keys(WEATHER_PRESETS) as WeatherPreset[]
@@ -33,7 +32,7 @@ const SKY_NAMES = Object.keys(SKY_PRESETS) as SkyPreset[]
  * Live weather and daylight for the wall. For trying things out:
  * `?weather=rain&sky=dusk`, or press W / S to cycle weather and sky presets.
  */
-export function startWeather(elements: WeatherElements, location: LngLat): void {
+export function startWeather(elements: WeatherElements, location: LngLat, reportDemo: ReportDemo): void {
   const canvas = createWeatherCanvas(elements.canvas)
   const lightning = createLightning(elements.flash, canvas.strike)
   let overrides: Overrides = parseOverrides(window.location.search)
@@ -45,6 +44,8 @@ export function startWeather(elements: WeatherElements, location: LngLat): void 
     // `sunAltitudeDegrees` in sky.ts is ready for when night gets a brighter treatment.
     const altitude = SKY_PRESETS[overrides.sky ?? 'day']
     canvas.setWeather(weather)
+    reportDemo('weather', overrides.weather ? `Weather: ${overrides.weather}` : null)
+    reportDemo('sky', overrides.sky ? `Sky: ${overrides.sky}` : null)
     lightning.setActive(weather.kind === 'storm')
     applyLighting(elements, lightingForSunAltitude(altitude))
   }
@@ -61,15 +62,11 @@ export function startWeather(elements: WeatherElements, location: LngLat): void 
     window.setTimeout(poll, delay)
   }
 
-  const showToast = createToast(elements.toast)
-
   window.addEventListener('keydown', (event) => {
     if (event.key === 'w') {
       overrides = { ...overrides, weather: nextOption(overrides.weather, WEATHER_NAMES) }
-      showToast(`Weather: ${overrides.weather ?? 'live'}`)
     } else if (event.key === 's') {
       overrides = { ...overrides, sky: nextOption(overrides.sky, SKY_NAMES) }
-      showToast(`Sky: ${overrides.sky ?? 'live'}`)
     } else {
       return
     }

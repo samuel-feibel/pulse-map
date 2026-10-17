@@ -4,11 +4,12 @@ export type SportsMode = 'live' | PreviewTeam
 
 const MODES: readonly SportsMode[] = ['live', 'redsox', 'celtics', 'bruins']
 
-export const MODE_LABELS: Readonly<Record<SportsMode, string>> = {
-  live: 'Sports: live',
-  redsox: 'Sports preview: Red Sox',
-  celtics: 'Sports preview: Celtics',
-  bruins: 'Sports preview: Bruins',
+/** Short name for the corner demo badge while previewing; null when live. */
+export const DEMO_LABELS: Readonly<Record<SportsMode, string | null>> = {
+  live: null,
+  redsox: 'Red Sox preview',
+  celtics: 'Celtics preview',
+  bruins: 'Bruins preview',
 }
 
 /** `?sports=redsox` (or `celtics`, `bruins`) starts in that team's preview; anything else is live. */

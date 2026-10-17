@@ -2,7 +2,8 @@ import type { Map as MapLibreMap } from 'maplibre-gl'
 import { gameEvents } from './events'
 import { createGameFeed } from './feed'
 import { addSportsLayers, setSportsFrame, type OutlineFeature, type RippleFeature } from './layers'
-import { MODE_LABELS, nextSportsMode, type SportsMode } from './modes'
+import type { ReportDemo } from '../ui/demoBadge'
+import { DEMO_LABELS, nextSportsMode, type SportsMode } from './modes'
 import { rippleAt, type Ripple } from './ripples'
 import { createScoreboards } from './scoreboards'
 import { TEAMS, type Team } from './teams'
@@ -36,7 +37,11 @@ interface TeamRipple extends Ripple {
  * Boston games as venue outlines with scores and ripples. Press D to cycle live → Red Sox → Celtics →
  * Bruins previews, or start in one with `?sports=redsox` (or `celtics`, `bruins`).
  */
-export function startSports(map: MapLibreMap, initialMode: SportsMode, notify: (text: string) => void): void {
+export function startSports(
+  map: MapLibreMap,
+  initialMode: SportsMode,
+  reportDemo: ReportDemo,
+): void {
   addSportsLayers(map)
   const scoreboards = createScoreboards(map)
   const games = new Map<string, Game | null>()
@@ -113,11 +118,11 @@ export function startSports(map: MapLibreMap, initialMode: SportsMode, notify: (
     ripples = []
     mode = next
     feed.setMode(next)
+    reportDemo('sports', DEMO_LABELS[next])
   }
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'd') return
     switchTo(nextSportsMode(mode))
-    notify(MODE_LABELS[mode])
   })
   switchTo(initialMode)
   requestAnimationFrame(render)

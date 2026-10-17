@@ -1,4 +1,5 @@
 import type { Map as MapLibreMap } from 'maplibre-gl'
+import type { ReportDemo } from '../ui/demoBadge'
 import type { LngLat } from '../geo'
 import { fetchAircraft } from './adsb'
 import { aircraftName } from './aircraftTypes'
@@ -33,8 +34,9 @@ const labelOpacity = (progress: number): number =>
   Math.min(1, progress / LABEL_FADE, (1 - progress) / LABEL_FADE)
 
 /** Live (or demo) aircraft: planes with fading trails, and scripted runway runs with call-outs at Logan. */
-export function startPlanes(map: MapLibreMap, center: LngLat, mode: PlanesMode): void {
+export function startPlanes(map: MapLibreMap, center: LngLat, mode: PlanesMode, reportDemo: ReportDemo): void {
   addPlaneLayers(map)
+  reportDemo('planes', mode === 'demo' ? 'Planes' : null)
   const showLabels = createPlaneLabels(map)
   const lookupRoute =
     mode === 'demo' ? (callsign: string) => Promise.resolve<Route | null>(DEMO_ROUTES.get(callsign) ?? null) : createRouteLookup()

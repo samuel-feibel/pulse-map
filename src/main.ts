@@ -16,7 +16,7 @@ import { addRunwayLayer } from './planes/layers'
 import { LOGAN_RUNWAYS } from './planes/runways'
 import { startSports } from './sports/controller'
 import { sportsModeFromUrl } from './sports/modes'
-import { createToast } from './ui/toast'
+import { createDemoBadge } from './ui/demoBadge'
 import { SPORTS_BOTTOM_LAYER } from './sports/layers'
 import { startWeather } from './weather/controller'
 
@@ -39,6 +39,7 @@ function element<T extends HTMLElement>(id: string): T {
 }
 
 const container = element('map')
+const reportDemo = createDemoBadge(element('demo-badge'))
 
 const map = new maplibregl.Map({
   container,
@@ -67,7 +68,7 @@ map.on('load', async () => {
   // Layer order, bottom to top: roads, runways, subway lines, venue outlines and ripples, stations, trains, planes.
   const search = window.location.search
   addRunwayLayer(map)
-  startSports(map, sportsModeFromUrl(search), createToast(element('toast')))
+  startSports(map, sportsModeFromUrl(search), reportDemo)
   try {
     const [lines, stations] = await Promise.all([fetchLines(), loadStations()])
     addLineLayers(map, lines, SPORTS_BOTTOM_LAYER)
@@ -77,7 +78,7 @@ map.on('load', async () => {
   } catch (error) {
     console.error('Could not load subway lines; showing the map without trains.', error)
   }
-  startPlanes(map, CENTER, planesModeFromUrl(search))
+  startPlanes(map, CENTER, planesModeFromUrl(search), reportDemo)
 })
 
 startWeather(
@@ -87,7 +88,7 @@ startWeather(
     effects: element('weather'),
     tint: element('tint'),
     flash: element('flash'),
-    toast: element('toast'),
   },
   CENTER,
+  reportDemo,
 )

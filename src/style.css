@@ -31,7 +31,7 @@ body {
 #weather,
 #tint,
 #flash,
-#toast {
+#demo-badge {
   pointer-events: none;
 }
 
@@ -52,17 +52,6 @@ body {
 #flash {
   background: #fff;
   opacity: 0;
-}
-
-#toast {
-  inset: auto auto 16px 16px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #ddd;
-  font: 13px system-ui, sans-serif;
-  opacity: 0;
-  transition: opacity 0.4s ease;
 }
 
 /* Score labels on the venue outlines. Their size is set from SCORE_TEXT_SIZE in src/sports/tuning.ts. */
@@ -93,4 +82,21 @@ body {
 
 .plane-label > :last-child:not(:first-child) {
   color: #fff;
+}
+
+/* Stays in the corner whenever part of the wall is simulated rather than live. */
+#demo-badge {
+  inset: 12px auto auto 12px;
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 140, 60, 0.7);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ff9a4d;
+  font: 700 11px system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+#demo-badge[hidden] {
+  display: none;
 }
