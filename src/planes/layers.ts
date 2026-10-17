@@ -1,7 +1,7 @@
 import type { FeatureCollection, LineString, Point } from 'geojson'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import type { LngLat } from '../geo'
-import { LOGAN_RUNWAYS } from './runways'
+import type { Runway } from './runways'
 
 const RUNWAYS_SOURCE = 'runways'
 const PLANES_SOURCE = 'planes'
@@ -49,13 +49,13 @@ function planeIcon(): ImageData {
   return ctx.getImageData(0, 0, ICON_PX, ICON_PX)
 }
 
-/** Logan's runways as grey strips, so takeoffs and landings have something to roll along. */
-export function addRunwayLayer(map: MapLibreMap, beforeLayerId?: string): void {
+/** An airport's runways as grey strips, so takeoffs and landings have something to roll along. */
+export function addRunwayLayer(map: MapLibreMap, runways: readonly Runway[], beforeLayerId?: string): void {
   map.addSource(RUNWAYS_SOURCE, {
     type: 'geojson',
     data: {
       type: 'FeatureCollection',
-      features: LOGAN_RUNWAYS.map(({ ends }) => ({
+      features: runways.map(({ ends }) => ({
         type: 'Feature',
         properties: {},
         geometry: { type: 'LineString', coordinates: ends.map((e) => [e.position.lng, e.position.lat]) },

@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import { moveAlong } from './motion'
-import { LOGAN_RUNWAYS, matchRunway } from './runways'
+import { LOGAN } from '../cities/boston/airport'
+import { matchRunway as matchOn } from './runways'
+
+const LOGAN_RUNWAYS = LOGAN.runways
+const matchRunway = (position: { lng: number; lat: number }, track: number) => matchOn(position, track, LOGAN_RUNWAYS)
 
 const runway04R = LOGAN_RUNWAYS.find((r) => r.ends[0].name === '04R')!
 const [threshold04R] = runway04R.ends

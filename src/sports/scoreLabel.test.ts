@@ -15,8 +15,8 @@ const game: Game = {
 }
 
 describe('scoreLines', () => {
-  test('lists Boston first, then the opponent, each in its own color', () => {
-    expect(scoreLines(game, '#FFB81C')).toEqual([
+  test('lists the home team first, then the opponent, each in its own color', () => {
+    expect(scoreLines(game, { abbreviation: 'BOS', color: '#FFB81C' })).toEqual([
       { text: 'BOS 3', color: '#FFB81C' },
       { text: 'ANA 2', color: '#FC4C02' },
     ])

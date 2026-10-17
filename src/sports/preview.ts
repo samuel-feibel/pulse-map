@@ -1,37 +1,22 @@
+import type { Team } from './teams'
 import type { Game } from './types'
 
-const SECOND = 1000
-
-interface PreviewScript {
-  /** How often Boston scores, and how many points at a time. */
-  readonly everyMs: number
-  readonly points: number
-  readonly opponent: string
-  readonly opponentColor: string
-}
-
-const SCRIPTS: Readonly<Record<string, PreviewScript>> = {
-  redsox: { everyMs: 7 * SECOND, points: 1, opponent: 'NYY', opponentColor: '#C4CED4' },
-  celtics: { everyMs: 4 * SECOND, points: 2, opponent: 'NYK', opponentColor: '#F58426' },
-  bruins: { everyMs: 9 * SECOND, points: 1, opponent: 'MTL', opponentColor: '#AF1E2D' },
-}
-const DEFAULT_SCRIPT: PreviewScript = { everyMs: 8 * SECOND, points: 1, opponent: 'OPP', opponentColor: '#FFFFFF' }
-/** Opponents score at a third of Boston's pace, so Boston stays ahead. */
+/** Opponents score at a third of the home team's pace, so the home team stays ahead. */
 const OPPONENT_PACE = 3
 
 /** A never-ending live home game for one team, scoring every few seconds: for seeing how its stadium looks. */
-export function previewGame(teamId: string, elapsedMs: number): Game {
-  const script = SCRIPTS[teamId] ?? DEFAULT_SCRIPT
-  const scores = Math.floor(elapsedMs / script.everyMs)
+export function previewGame(team: Pick<Team, 'id' | 'preview'>, elapsedMs: number): Game {
+  const { everyMs, points, opponent, opponentColor } = team.preview
+  const scores = Math.floor(elapsedMs / everyMs)
   return {
-    teamId,
-    eventId: `preview-${teamId}`,
+    teamId: team.id,
+    eventId: `preview-${team.id}`,
     state: 'live',
     isHome: true,
-    score: scores * script.points,
-    opponentScore: Math.floor(scores / OPPONENT_PACE) * script.points,
+    score: scores * points,
+    opponentScore: Math.floor(scores / OPPONENT_PACE) * points,
     won: null,
-    opponent: script.opponent,
-    opponentColor: script.opponentColor,
+    opponent,
+    opponentColor,
   }
 }

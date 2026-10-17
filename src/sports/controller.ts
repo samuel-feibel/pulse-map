@@ -3,10 +3,10 @@ import { gameEvents } from './events'
 import { createGameFeed } from './feed'
 import { addSportsLayers, setSportsFrame, type OutlineFeature, type RippleFeature } from './layers'
 import type { ReportDemo } from '../ui/demoBadge'
-import { DEMO_LABELS, nextSportsMode, type SportsMode } from './modes'
+import { demoLabel, nextSportsMode, type SportsMode } from './modes'
 import { rippleAt, type Ripple } from './ripples'
 import { createScoreboards } from './scoreboards'
-import { TEAMS, type Team } from './teams'
+import type { Team } from './teams'
 import type { Game, GameEvent } from './types'
 
 const HOME_OUTLINE = 1
@@ -34,18 +34,19 @@ interface TeamRipple extends Ripple {
 }
 
 /**
- * Boston games as venue outlines with scores and ripples. Press D to cycle live → Red Sox → Celtics →
- * Bruins previews, or start in one with `?sports=redsox` (or `celtics`, `bruins`).
+ * A city's home games as venue outlines with scores and ripples. Press D to cycle live → each team's
+ * preview, or start in one with `?sports=<team id>` (e.g. `?sports=redsox`).
  */
 export function startSports(
   map: MapLibreMap,
+  teams: readonly Team[],
   initialMode: SportsMode,
   reportDemo: ReportDemo,
 ): void {
   addSportsLayers(map)
   const scoreboards = createScoreboards(map)
   const games = new Map<string, Game | null>()
-  const brightness = new Map<string, number>(TEAMS.map((t) => [t.id, 0]))
+  const brightness = new Map<string, number>(teams.map((t) => [t.id, 0]))
   const celebrateUntil = new Map<string, number>()
   let ripples: TeamRipple[] = []
   let lastFrame = performance.now()
@@ -87,13 +88,13 @@ export function startSports(
   const render = (now: number): void => {
     const dt = Math.min((now - lastFrame) / 1000, 0.1)
     lastFrame = now
-    TEAMS.forEach((team) => {
+    teams.forEach((team) => {
       const current = brightness.get(team.id) ?? 0
       const target = targetBrightness(team, now)
       brightness.set(team.id, current + (target - current) * Math.min(1, OUTLINE_EASE * dt))
     })
     const breath = 1 - OUTLINE_BREATH * (0.5 + 0.5 * Math.sin(now / OUTLINE_BREATH_MS))
-    const outlines: OutlineFeature[] = TEAMS.filter((t) => (brightness.get(t.id) ?? 0) > 0.01).map((t) => ({
+    const outlines: OutlineFeature[] = teams.filter((t) => (brightness.get(t.id) ?? 0) > 0.01).map((t) => ({
       marker: t.marker,
       outline: t.outline,
       color: t.color,
@@ -105,12 +106,12 @@ export function startSports(
       return frame ? [{ marker: r.team.marker, color: r.team.color, ...frame }] : []
     })
     setSportsFrame(map, outlines, rings)
-    TEAMS.forEach((t) => scoreboards.render(t, games.get(t.id) ?? null, brightness.get(t.id) ?? 0))
+    teams.forEach((t) => scoreboards.render(t, games.get(t.id) ?? null, brightness.get(t.id) ?? 0))
     requestAnimationFrame(render)
   }
 
   let mode = initialMode
-  const feed = createGameFeed(update)
+  const feed = createGameFeed(teams, update)
   const switchTo = (next: SportsMode): void => {
     // Start each mode from a clean slate so nothing from the previous one celebrates or lingers.
     games.clear()
@@ -118,11 +119,11 @@ export function startSports(
     ripples = []
     mode = next
     feed.setMode(next)
-    reportDemo('sports', DEMO_LABELS[next])
+    reportDemo('sports', demoLabel(next, teams))
   }
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'd') return
-    switchTo(nextSportsMode(mode))
+    switchTo(nextSportsMode(mode, teams.map((t) => t.id)))
   })
   switchTo(initialMode)
   requestAnimationFrame(render)

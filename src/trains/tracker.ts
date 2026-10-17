@@ -1,5 +1,5 @@
 import { distanceMeters, type LngLat } from '../geo'
-import type { Vehicle } from '../mbta/vehicles'
+import type { Vehicle } from '../transit/types'
 import { pointAlong, snapToRoute, type TrackShape } from './trackGeometry'
 
 /** Track shapes for each route (several for branching routes like the Red and Green lines). */

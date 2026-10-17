@@ -26,7 +26,13 @@ describe('rectangle', () => {
 })
 
 describe('fieldOutline', () => {
-  const [outfield, infield] = fieldOutline(1, 45)
+  // A simple park: 330 ft down both lines, 400 ft to straightaway center.
+  const WALL = [
+    [0, 330],
+    [45, 400],
+    [90, 330],
+  ] as const
+  const [outfield, infield] = fieldOutline(WALL, 1, 45)
 
   test('starts and ends at home plate', () => {
     expect(outfield[0]).toEqual([0, 0])
@@ -46,8 +52,16 @@ describe('fieldOutline', () => {
     expect(bearing).toBeLessThan(60)
   })
 
+  test("follows the park's own wall, e.g. a short right-field line", () => {
+    const [field] = fieldOutline([[0, 339], [45, 391], [63, 415], [90, 309]], 1, 0)
+    const rightFieldPole = field.at(-2)!
+    expect(Math.hypot(...rightFieldPole)).toBeCloseTo(309 * 0.3048, 1)
+    // With center field pointing up, the right-field line runs up and to the right at 45°.
+    expect(rightFieldPole[0]).toBeCloseTo(rightFieldPole[1], 1)
+  })
+
   test('scales up for visibility', () => {
-    const [big] = fieldOutline(4, 45)
+    const [big] = fieldOutline(WALL, 4, 45)
     expect(Math.max(...big.map((p) => Math.hypot(...p)))).toBeCloseTo(4 * Math.max(...outfield.map((p) => Math.hypot(...p))))
   })
 })

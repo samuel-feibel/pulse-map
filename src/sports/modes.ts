@@ -1,21 +1,26 @@
-/** Live scores, or a preview of one team's stadium. */
-export type PreviewTeam = 'redsox' | 'celtics' | 'bruins'
-export type SportsMode = 'live' | PreviewTeam
+import type { Team } from './teams'
 
-const MODES: readonly SportsMode[] = ['live', 'redsox', 'celtics', 'bruins']
+/** 'live' for real scores, or a team's id to preview just that team's stadium. */
+export type SportsMode = string
+
+export const LIVE: SportsMode = 'live'
+
+const cycle = (teamIds: readonly string[]): readonly SportsMode[] => [LIVE, ...teamIds]
+
+/** `?sports=<team id>` (e.g. `redsox`) starts in that team's preview; anything else is live. */
+export function sportsModeFromUrl(search: string, teamIds: readonly string[]): SportsMode {
+  const requested = new URLSearchParams(search).get('sports')
+  return requested !== null && teamIds.includes(requested) ? requested : LIVE
+}
+
+/** Live → each team in turn → live. */
+export function nextSportsMode(mode: SportsMode, teamIds: readonly string[]): SportsMode {
+  const modes = cycle(teamIds)
+  return modes[(modes.indexOf(mode) + 1) % modes.length]
+}
 
 /** Short name for the corner demo badge while previewing; null when live. */
-export const DEMO_LABELS: Readonly<Record<SportsMode, string | null>> = {
-  live: null,
-  redsox: 'Red Sox preview',
-  celtics: 'Celtics preview',
-  bruins: 'Bruins preview',
+export function demoLabel(mode: SportsMode, teams: readonly Team[]): string | null {
+  const team = teams.find((t) => t.id === mode)
+  return team ? `${team.name} preview` : null
 }
-
-/** `?sports=redsox` (or `celtics`, `bruins`) starts in that team's preview; anything else is live. */
-export function sportsModeFromUrl(search: string): SportsMode {
-  const requested = new URLSearchParams(search).get('sports')
-  return MODES.find((mode) => mode === requested) ?? 'live'
-}
-
-export const nextSportsMode = (mode: SportsMode): SportsMode => MODES[(MODES.indexOf(mode) + 1) % MODES.length]

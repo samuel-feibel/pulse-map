@@ -3,7 +3,8 @@ import type { ReportDemo } from '../ui/demoBadge'
 import type { LngLat } from '../geo'
 import { fetchAircraft } from './adsb'
 import { aircraftName } from './aircraftTypes'
-import { DEMO_ROUTES, demoAircraft } from './demo'
+import type { Airport } from './airport'
+import { createDemoTraffic } from './demo'
 import { runwayEvent } from './detect'
 import { createPlaneLabels, type PlaneLabel } from './labels'
 import { addPlaneLayers, setPlanes, type PlaneFeature, type TrailFeature } from './layers'
@@ -33,13 +34,20 @@ interface ActiveRun {
 const labelOpacity = (progress: number): number =>
   Math.min(1, progress / LABEL_FADE, (1 - progress) / LABEL_FADE)
 
-/** Live (or demo) aircraft: planes with fading trails, and scripted runway runs with call-outs at Logan. */
-export function startPlanes(map: MapLibreMap, center: LngLat, mode: PlanesMode, reportDemo: ReportDemo): void {
+/** Live (or demo) aircraft: planes with fading trails, and scripted runway runs with call-outs at the city's airport. */
+export function startPlanes(
+  map: MapLibreMap,
+  center: LngLat,
+  airport: Airport,
+  mode: PlanesMode,
+  reportDemo: ReportDemo,
+): void {
   addPlaneLayers(map)
   reportDemo('planes', mode === 'demo' ? 'Planes' : null)
   const showLabels = createPlaneLabels(map)
+  const demo = mode === 'demo' ? createDemoTraffic(airport) : null
   const lookupRoute =
-    mode === 'demo' ? (callsign: string) => Promise.resolve<Route | null>(DEMO_ROUTES.get(callsign) ?? null) : createRouteLookup()
+    demo ? (callsign: string) => Promise.resolve<Route | null>(demo.routes.get(callsign) ?? null) : createRouteLookup()
   let planes = new Map<string, TrackedPlane>()
   const trails = new Map<string, TrailPoint[]>()
   const runs = new Map<string, ActiveRun>()
@@ -47,7 +55,7 @@ export function startPlanes(map: MapLibreMap, center: LngLat, mode: PlanesMode, 
 
   const startRun = (aircraft: Aircraft, kind: RunwayEventKind, previous: Aircraft | undefined, now: number): void => {
     const track = aircraft.trackDeg ?? previous?.trackDeg
-    const runway = track === null || track === undefined ? null : matchRunway(aircraft.position, track)
+    const runway = track === null || track === undefined ? null : matchRunway(aircraft.position, track, airport.runways)
     if (!runway) {
       return
     }
@@ -58,7 +66,7 @@ export function startPlanes(map: MapLibreMap, center: LngLat, mode: PlanesMode, 
       return
     }
     void lookupRoute(aircraft.callsign).then((route) => {
-      const label = route ? routeLabel(route, kind) : null
+      const label = route ? routeLabel(route, kind, airport.code) : null
       const active = runs.get(aircraft.id)
       if (label && active?.run === run) {
         runs.set(aircraft.id, { ...active, lines: [...active.lines, label] })
@@ -70,7 +78,7 @@ export function startPlanes(map: MapLibreMap, center: LngLat, mode: PlanesMode, 
     const next = new Map<string, TrackedPlane>()
     aircraft.forEach((ac) => {
       const previous = planes.get(ac.id)
-      const kind = runwayEvent(previous?.aircraft ?? null, ac)
+      const kind = runwayEvent(previous?.aircraft ?? null, ac, airport.reference)
       const isCoolingDown = now - (lastEventAt.get(ac.id) ?? -Infinity) < EVENT_COOLDOWN_MS
       if (kind && !isCoolingDown && !runs.has(ac.id)) {
         startRun(ac, kind, previous?.aircraft, now)
@@ -130,9 +138,10 @@ export function startPlanes(map: MapLibreMap, center: LngLat, mode: PlanesMode, 
     requestAnimationFrame(render)
   }
 
-  if (mode === 'demo') {
+  if (demo) {
+    const traffic = demo
     const startedAt = performance.now()
-    const tick = (): void => ingest(demoAircraft(performance.now() - startedAt), performance.now())
+    const tick = (): void => ingest(traffic.aircraft(performance.now() - startedAt), performance.now())
     tick()
     window.setInterval(tick, DEMO_POLL_MS)
   } else {

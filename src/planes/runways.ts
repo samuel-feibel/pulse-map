@@ -10,23 +10,14 @@ export interface Runway {
   readonly ends: readonly [RunwayEnd, RunwayEnd]
 }
 
+/** Builds a runway end from threshold coordinates. */
+export const runwayEnd = (name: string, lat: number, lng: number): RunwayEnd => ({ name, position: { lng, lat } })
+
 /** A runway oriented in a plane's direction of travel. */
 export interface RunwayMatch {
   readonly from: RunwayEnd
   readonly to: RunwayEnd
 }
-
-const end = (name: string, lat: number, lng: number): RunwayEnd => ({ name, position: { lng, lat } })
-
-/** Logan's runways (threshold coordinates from OurAirports). */
-export const LOGAN_RUNWAYS: readonly Runway[] = [
-  { ends: [end('04L', 42.357997, -71.014344), end('22R', 42.378322, -71.004511)] },
-  { ends: [end('04R', 42.351064, -71.011801), end('22L', 42.376923, -70.999288)] },
-  { ends: [end('09', 42.355801, -71.012901), end('27', 42.360199, -70.987701)] },
-  { ends: [end('14', 42.356602, -71.0233), end('32', 42.348598, -71.008202)] },
-  { ends: [end('15L', 42.3736, -71.009102), end('33R', 42.368599, -71.002502)] },
-  { ends: [end('15R', 42.374298, -71.017899), end('33L', 42.354599, -70.9916)] },
-]
 
 const MAX_HEADING_DIFF = 25
 /** How far either side of the extended centerline a plane may be. */
@@ -45,7 +36,7 @@ function offsets(from: LngLat, bearing: number, point: LngLat): { along: number;
 }
 
 /** The runway a plane is lined up with, oriented the way it's moving, or null. */
-export function matchRunway(position: LngLat, trackDeg: number, runways: readonly Runway[] = LOGAN_RUNWAYS): RunwayMatch | null {
+export function matchRunway(position: LngLat, trackDeg: number, runways: readonly Runway[]): RunwayMatch | null {
   const candidates = runways.flatMap(({ ends: [a, b] }) =>
     [
       { from: a, to: b },

@@ -1,15 +1,6 @@
-import type { LngLat } from '../geo'
-import { fetchMbta, SUBWAY_ROUTE_IDS } from './client'
+import type { Vehicle } from '../transit/types'
+import { fetchMbta } from './client'
 import { numberOrNull, readDocument, relationshipId } from './jsonApi'
-
-export interface Vehicle {
-  readonly id: string
-  readonly routeId: string
-  readonly position: LngLat
-  readonly bearing: number | null
-  /** 0 or 1: which way along the route the train is heading (0 follows the line's shape order). */
-  readonly directionId: number | null
-}
 
 export function parseVehicles(body: unknown): Vehicle[] {
   return readDocument(body).data.flatMap((resource): Vehicle[] => {
@@ -31,9 +22,9 @@ export function parseVehicles(body: unknown): Vehicle[] {
   })
 }
 
-export async function fetchVehicles(): Promise<Vehicle[]> {
+export async function fetchVehicles(routeIds: readonly string[]): Promise<Vehicle[]> {
   const body = await fetchMbta('/vehicles', {
-    'filter[route]': SUBWAY_ROUTE_IDS.join(','),
+    'filter[route]': routeIds.join(','),
     'fields[vehicle]': 'latitude,longitude,bearing,direction_id',
   })
   return parseVehicles(body)
