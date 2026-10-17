@@ -50,7 +50,7 @@ export function createScoreboards(map: MapLibreMap): Scoreboards {
         return
       }
       const element = entry.marker.getElement()
-      const lines = scoreLines(game, team.color)
+      const lines = scoreLines(game, team)
       const text = JSON.stringify(lines)
       if (text !== entry.text) {
         element.replaceChildren(

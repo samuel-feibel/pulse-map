@@ -3,7 +3,6 @@ import type { RunwayEventKind } from './types'
 
 /** adsbdb: free, keyless flight-route lookup by callsign. Routes can be out of date. */
 const API_BASE = 'https://api.adsbdb.com/v0/callsign'
-const HOME_AIRPORT = 'BOS'
 /** adsbdb publishes no limit; lookups only happen on takeoffs and landings, and never faster than this. */
 const MIN_INTERVAL_MS = 5_000
 
@@ -29,12 +28,12 @@ export function parseRoute(body: unknown): Route | null {
   return origin && destination ? { origin, destination } : null
 }
 
-/** '→ ORD' for a departure, '← ATL' for an arrival; null if the route doesn't fit this Boston movement. */
-export function routeLabel(route: Route, kind: RunwayEventKind): string | null {
-  if (kind === 'takeoff' && route.origin === HOME_AIRPORT) {
+/** '→ ORD' for a departure, '← ATL' for an arrival; null if the route doesn't fit this movement at `home`. */
+export function routeLabel(route: Route, kind: RunwayEventKind, home: string): string | null {
+  if (kind === 'takeoff' && route.origin === home) {
     return `→ ${route.destination}`
   }
-  if (kind === 'landing' && route.destination === HOME_AIRPORT) {
+  if (kind === 'landing' && route.destination === home) {
     return `← ${route.origin}`
   }
   return null

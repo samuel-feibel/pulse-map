@@ -1,6 +1,6 @@
 import type { FeatureCollection, Point } from 'geojson'
 import type { Map as MapLibreMap } from 'maplibre-gl'
-import type { Station } from '../mbta/stations'
+import type { Station } from '../transit/types'
 
 const STATIONS_SOURCE = 'stations'
 const STATION_FILL = '#000000'

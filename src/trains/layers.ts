@@ -1,7 +1,8 @@
 import type { FeatureCollection, LineString, Point } from 'geojson'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
-import type { Line } from '../mbta/lines'
+import type { Line } from '../transit/types'
 import { trainAt, type Network, type Tracks } from './tracker'
+import { displayColor } from './colors'
 import { buildTrack } from './trackGeometry'
 
 const LINES_SOURCE = 'subway-lines'
@@ -27,14 +28,14 @@ export function buildNetwork(lines: readonly Line[]): Network {
 }
 
 export const routeColors = (lines: readonly Line[]): RouteColors =>
-  new Map(lines.map((line) => [line.routeId, line.color]))
+  new Map(lines.map((line) => [line.routeId, displayColor(line.color)]))
 
 function linesCollection(lines: readonly Line[]): FeatureCollection<LineString> {
   return {
     type: 'FeatureCollection',
     features: lines.map((line) => ({
       type: 'Feature',
-      properties: { color: line.color },
+      properties: { color: displayColor(line.color) },
       geometry: { type: 'LineString', coordinates: line.coordinates.map(([lng, lat]) => [lng, lat]) },
     })),
   }
@@ -119,7 +120,7 @@ export function addTrainLayers(map: MapLibreMap, lines: readonly Line[]): void {
       'circle-opacity': 0.7,
     },
   })
-  const colors = new Set([...lines.map((line) => line.color), TRAIN_CORE_COLOR])
+  const colors = new Set([...lines.map((line) => displayColor(line.color)), TRAIN_CORE_COLOR])
   colors.forEach((color) => map.addImage(capsuleImageName(color), capsuleIcon(color), { pixelRatio: CAPSULE_PIXEL_RATIO }))
   map.addLayer({
     id: 'train-capsules',

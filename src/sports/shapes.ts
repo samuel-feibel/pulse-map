@@ -39,21 +39,11 @@ export function rectangle(width: number, height: number, cornerRadius: number): 
 }
 
 /**
- * Fenway Park's outfield wall in feet, as [degrees from the left-field line, distance from home plate]:
- * the short Green Monster in left, the deep triangle in center, the curving right field to Pesky's Pole.
+ * A ballpark's outfield wall in feet, as [degrees from the left-field line, distance from home plate],
+ * from the left-field pole (0°) to the right-field pole (90°). Each city lists its parks' walls.
  */
-const FENWAY_WALL: readonly (readonly [number, number])[] = [
-  [0, 310],
-  [15, 335],
-  [30, 379],
-  [37, 390],
-  [42, 420],
-  [50, 400],
-  [62, 380],
-  [75, 380],
-  [85, 330],
-  [90, 302],
-]
+export type OutfieldWall = readonly (readonly [number, number])[]
+
 const BASE_PATH_FEET = 90
 const HOME_TO_SECOND_FEET = BASE_PATH_FEET * Math.SQRT2
 
@@ -62,12 +52,12 @@ const polar = (bearingDegrees: number, meters: number): [number, number] => [
   meters * Math.cos(toRadians(bearingDegrees)),
 ]
 
-/** Fenway's field (outfield wall, then infield diamond), home plate at the origin. */
-export function fieldOutline(scale: number, centerFieldBearing: number): readonly [Ring, Ring] {
+/** A ballpark (outfield wall, then infield diamond), home plate at the origin. */
+export function fieldOutline(wall: OutfieldWall, scale: number, centerFieldBearing: number): readonly [Ring, Ring] {
   const leftFieldLine = centerFieldBearing - QUARTER_TURN / 2
   const meters = (feet: number) => feet * FEET * scale
   const home: [number, number] = [0, 0]
-  const wall = FENWAY_WALL.map(([angle, feet]) => polar(leftFieldLine + angle, meters(feet)))
+  const outfield = wall.map(([angle, feet]) => polar(leftFieldLine + angle, meters(feet)))
   const diamond: Ring = [
     home,
     polar(centerFieldBearing + QUARTER_TURN / 2, meters(BASE_PATH_FEET)),
@@ -75,7 +65,7 @@ export function fieldOutline(scale: number, centerFieldBearing: number): readonl
     polar(centerFieldBearing - QUARTER_TURN / 2, meters(BASE_PATH_FEET)),
     home,
   ]
-  return [[home, ...wall, home], diamond]
+  return [[home, ...outfield, home], diamond]
 }
 
 /** Places a meter-based outline on the map around `anchor`. Accurate enough at city scale. */

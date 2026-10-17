@@ -1,7 +1,7 @@
 import { fetchGame } from './espn'
-import type { SportsMode } from './modes'
+import { LIVE, type SportsMode } from './modes'
 import { previewGame } from './preview'
-import { TEAMS, type Team } from './teams'
+import type { Team } from './teams'
 import type { Game } from './types'
 
 const LIVE_POLL_MS = 30_000
@@ -16,11 +16,11 @@ export interface GameFeed {
 
 /** In a team's preview, only that team has a game; everyone else is off. */
 const previewFor = (mode: SportsMode, team: Team, elapsedMs: number): Game | null =>
-  team.id === mode ? previewGame(team.id, elapsedMs) : null
+  team.id === mode ? previewGame(team, elapsedMs) : null
 
 /** Feeds each team's game to `onGame`: real ESPN scores, or a preview game for one team. */
-export function createGameFeed(onGame: (team: Team, game: Game | null) => void): GameFeed {
-  let mode: SportsMode = 'live'
+export function createGameFeed(teams: readonly Team[], onGame: (team: Team, game: Game | null) => void): GameFeed {
+  let mode: SportsMode = LIVE
   let startedAt = performance.now()
   /** Bumped on every switch so in-flight live requests from an old mode are ignored. */
   let generation = 0
@@ -28,7 +28,7 @@ export function createGameFeed(onGame: (team: Team, game: Game | null) => void):
 
   const startLive = (): void => {
     const current = generation
-    TEAMS.forEach((team) => {
+    teams.forEach((team) => {
       const poll = async (): Promise<void> => {
         let delay = RETRY_MS
         try {
@@ -46,9 +46,9 @@ export function createGameFeed(onGame: (team: Team, game: Game | null) => void):
   }
 
   const tickPreview = (): void => {
-    if (mode === 'live') return
+    if (mode === LIVE) return
     const elapsed = performance.now() - startedAt
-    TEAMS.forEach((team) => onGame(team, previewFor(mode, team, elapsed)))
+    teams.forEach((team) => onGame(team, previewFor(mode, team, elapsed)))
   }
   window.setInterval(tickPreview, PREVIEW_TICK_MS)
 
@@ -59,7 +59,7 @@ export function createGameFeed(onGame: (team: Team, game: Game | null) => void):
       timers.clear()
       mode = next
       startedAt = performance.now()
-      if (mode === 'live') {
+      if (mode === LIVE) {
         startLive()
       } else {
         tickPreview()

@@ -3,28 +3,27 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 // Vite bundles the worker itself; MapLibre can't find it after dependency pre-bundling.
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import './style.css'
-import { CENTER, FRAME_MARGIN_METERS, HARVARD_SQUARE } from './config'
+import { cityFromUrl } from './cities'
 import { halfWidthToInclude, squareBounds } from './geo'
-import { fetchLines } from './mbta/lines'
-import { fetchStations, type Station } from './mbta/stations'
 import { minimalStyle } from './mapStyle'
-import { addLineLayers, addTrainLayers } from './trains/layers'
-import { startLiveTrains } from './trains/live'
-import { addStationLayers } from './trains/stationLayers'
 import { planesModeFromUrl, startPlanes } from './planes/controller'
 import { addRunwayLayer } from './planes/layers'
-import { LOGAN_RUNWAYS } from './planes/runways'
 import { startSports } from './sports/controller'
-import { sportsModeFromUrl } from './sports/modes'
-import { createDemoBadge } from './ui/demoBadge'
 import { SPORTS_BOTTOM_LAYER } from './sports/layers'
+import { sportsModeFromUrl } from './sports/modes'
+import { startTransit } from './trains/start'
+import { createDemoBadge } from './ui/demoBadge'
 import { startWeather } from './weather/controller'
 
 maplibregl.setWorkerUrl(workerUrl)
 
-// Garden in the middle, wide enough to show Harvard Square and every Logan runway end.
-const mustShow = [HARVARD_SQUARE, ...LOGAN_RUNWAYS.flatMap((runway) => runway.ends.map((end) => end.position))]
-const bounds = squareBounds(CENTER, halfWidthToInclude(CENTER, mustShow, FRAME_MARGIN_METERS))
+const search = window.location.search
+/** `?city=sf` for San Francisco; Boston otherwise. Each city's settings live in src/cities/. */
+const city = cityFromUrl(search)
+document.title = `Pulse Map · ${city.name}`
+
+const { center, mustShow, marginMeters } = city.frame
+const bounds = squareBounds(center, halfWidthToInclude(center, mustShow, marginMeters))
 const lngLatBounds: maplibregl.LngLatBoundsLike = [
   [bounds.west, bounds.south],
   [bounds.east, bounds.north],
@@ -50,6 +49,11 @@ const map = new maplibregl.Map({
   attributionControl: false,
 })
 
+// Development only: lets the browser console inspect the map (`pulseMap.getStyle()`, etc.).
+if (import.meta.env.DEV) {
+  Object.assign(window, { pulseMap: map })
+}
+
 // Keep the same patch of city framed whenever the window (or projector output) changes size.
 map.on('resize', () => map.fitBounds(lngLatBounds, { animate: false }))
 
@@ -57,28 +61,22 @@ map.on('error', (event) => {
   console.error('Map error:', event.error)
 })
 
-// Stations are a nice-to-have: if they fail to load, the lines and trains still show.
-const loadStations = (): Promise<readonly Station[]> =>
-  fetchStations().catch((error: unknown) => {
-    console.error('Could not load stations; showing lines and trains without them.', error)
-    return []
-  })
-
 map.on('load', async () => {
-  // Layer order, bottom to top: roads, runways, subway lines, venue outlines and ripples, stations, trains, planes.
-  const search = window.location.search
-  addRunwayLayer(map)
-  startSports(map, sportsModeFromUrl(search), reportDemo)
-  try {
-    const [lines, stations] = await Promise.all([fetchLines(), loadStations()])
-    addLineLayers(map, lines, SPORTS_BOTTOM_LAYER)
-    addStationLayers(map, stations)
-    addTrainLayers(map, lines)
-    startLiveTrains(map, lines)
-  } catch (error) {
-    console.error('Could not load subway lines; showing the map without trains.', error)
+  // Layer order, bottom to top: roads, runways, rail lines, venue outlines and ripples, stations, trains, planes.
+  // Each feature only appears if the city has it.
+  if (city.airport) {
+    addRunwayLayer(map, city.airport.runways)
   }
-  startPlanes(map, CENTER, planesModeFromUrl(search), reportDemo)
+  const teams = city.sportsTeams ?? []
+  if (teams.length > 0) {
+    startSports(map, teams, sportsModeFromUrl(search, teams.map((t) => t.id)), reportDemo)
+  }
+  if (city.transit) {
+    await startTransit(map, city.transit, SPORTS_BOTTOM_LAYER)
+  }
+  if (city.airport) {
+    startPlanes(map, center, city.airport, planesModeFromUrl(search), reportDemo)
+  }
 })
 
 startWeather(
@@ -89,6 +87,6 @@ startWeather(
     tint: element('tint'),
     flash: element('flash'),
   },
-  CENTER,
+  center,
   reportDemo,
 )

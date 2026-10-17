@@ -1,14 +1,8 @@
 import polyline from '@mapbox/polyline'
 import { cached, DAY_MS } from '../net/cache'
-import { fetchMbta, SUBWAY_ROUTE_IDS } from './client'
+import type { Line } from '../transit/types'
+import { fetchMbta } from './client'
 import { readDocument, relationshipId, type Resource } from './jsonApi'
-
-export interface Line {
-  readonly routeId: string
-  readonly color: string
-  /** [lng, lat] pairs, ready for GeoJSON. */
-  readonly coordinates: readonly (readonly [number, number])[]
-}
 
 const FALLBACK_COLOR = '#FFFFFF'
 
@@ -40,11 +34,12 @@ export function parseLines(body: unknown): Line[] {
 }
 
 /** Line shapes rarely change, so they're cached for a day instead of fetched on every page load. */
-export const fetchLines = (): Promise<Line[]> => cached('mbta-lines', DAY_MS, loadLines)
+export const fetchLines = (routeIds: readonly string[]): Promise<Line[]> =>
+  cached(`mbta-lines:${routeIds.join(',')}`, DAY_MS, () => loadLines(routeIds))
 
-async function loadLines(): Promise<Line[]> {
+async function loadLines(routeIds: readonly string[]): Promise<Line[]> {
   const body = await fetchMbta('/route_patterns', {
-    'filter[route]': SUBWAY_ROUTE_IDS.join(','),
+    'filter[route]': routeIds.join(','),
     'filter[canonical]': 'true',
     include: 'route,representative_trip.shape',
     'fields[route_pattern]': 'direction_id',

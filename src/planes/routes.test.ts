@@ -17,18 +17,18 @@ describe('parseRoute', () => {
 
 describe('routeLabel', () => {
   test('shows where a departing plane is headed', () => {
-    expect(routeLabel({ origin: 'BOS', destination: 'ORD' }, 'takeoff')).toBe('→ ORD')
+    expect(routeLabel({ origin: 'BOS', destination: 'ORD' }, 'takeoff', 'BOS')).toBe('→ ORD')
   })
 
   test('shows where an arriving plane came from', () => {
-    expect(routeLabel({ origin: 'ATL', destination: 'BOS' }, 'landing')).toBe('← ATL')
+    expect(routeLabel({ origin: 'ATL', destination: 'BOS' }, 'landing', 'BOS')).toBe('← ATL')
   })
 
   test('shows nothing when the route does not involve Boston, since it is probably stale', () => {
-    expect(routeLabel({ origin: 'DFW', destination: 'EWR' }, 'landing')).toBeNull()
+    expect(routeLabel({ origin: 'DFW', destination: 'EWR' }, 'landing', 'BOS')).toBeNull()
   })
 
   test('shows nothing when Boston is on the wrong end for this movement', () => {
-    expect(routeLabel({ origin: 'BOS', destination: 'ORD' }, 'landing')).toBeNull()
+    expect(routeLabel({ origin: 'BOS', destination: 'ORD' }, 'landing', 'BOS')).toBeNull()
   })
 })

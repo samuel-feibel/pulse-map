@@ -1,3 +1,4 @@
+import type { Team } from './teams'
 import type { Game } from './types'
 
 export interface ScoreLine {
@@ -5,10 +6,8 @@ export interface ScoreLine {
   readonly color: string
 }
 
-const BOSTON = 'BOS'
-
-/** Two lines for the scoreboard: Boston first, then the opponent, each in its team color. */
-export const scoreLines = (game: Game, bostonColor: string): readonly [ScoreLine, ScoreLine] => [
-  { text: `${BOSTON} ${game.score}`, color: bostonColor },
+/** Two lines for the scoreboard: the home team first, then the opponent, each in its team color. */
+export const scoreLines = (game: Game, team: Pick<Team, 'abbreviation' | 'color'>): readonly [ScoreLine, ScoreLine] => [
+  { text: `${team.abbreviation} ${game.score}`, color: team.color },
   { text: `${game.opponent} ${game.opponentScore}`, color: game.opponentColor },
 ]

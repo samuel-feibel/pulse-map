@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { distanceMeters } from '../geo'
-import type { Vehicle } from '../mbta/vehicles'
+import type { Vehicle } from '../transit/types'
 import { buildTrack } from './trackGeometry'
 import { trainAt, updateTracks, type Network } from './tracker'
 

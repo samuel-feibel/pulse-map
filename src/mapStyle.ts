@@ -4,7 +4,9 @@ import type {
   LayerSpecification,
   StyleSpecification,
 } from 'maplibre-gl'
-import { TILES_URL } from './config'
+
+/** Free OpenStreetMap vector tiles (OpenMapTiles schema), worldwide, no API key required. */
+const TILES_URL = 'https://tiles.openfreemap.org/planet'
 
 export const COLORS = {
   background: '#000000',

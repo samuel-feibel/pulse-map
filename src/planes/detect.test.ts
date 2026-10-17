@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'vitest'
-import { runwayEvent } from './detect'
+import { runwayEvent as eventAt } from './detect'
 import type { Aircraft } from './types'
+
+const LOGAN_REFERENCE = { lng: -71.0096, lat: 42.3656 }
+const runwayEvent = (previous: Aircraft | null, next: Aircraft) => eventAt(previous, next, LOGAN_REFERENCE)
 
 const nearLogan = { lng: -71.012, lat: 42.355 }
 const aircraft = (overrides: Partial<Aircraft> = {}): Aircraft => ({
