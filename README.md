@@ -41,3 +41,12 @@ Route data via adsbdb (David Taylor and Jim Mason's flight route data).
 
 The plane feed is proxied by the Vite dev server (`vite.config.ts`) because adsb.fi doesn't allow
 browser requests from other sites, so planes only work under `npm run dev` for now.
+
+## License
+
+The code is released under the [MIT License](LICENSE): use it, change it, and share it freely.
+
+The live data it shows comes with its own terms, which still apply when you run it. In particular,
+adsb.fi aircraft data is for personal, non-commercial use and must be credited, and adsbdb's route data
+may not be copied into other databases. See each source's site (linked above) before using the data
+for anything beyond a personal wall.
