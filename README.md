@@ -6,6 +6,12 @@ across, stadiums light up during games, and planes take off and land.
 It's drawn for a projector: a square, mostly black map (black is "no light"), with no labels except
 a few scores and call-outs.
 
+<p align="center">
+  <img src="docs/screenshots/boston.png" width="49%" alt="Pulse Map of Boston: MBTA trains on every subway line, a Red Sox score at Fenway with a score ping spreading out, and planes at Logan with a departure call-out">
+  <img src="docs/screenshots/san-francisco.png" width="49%" alt="Pulse Map of San Francisco: Muni, cable cars, BART and Caltrain trains, a Giants score at Oracle Park, and a departure call-out at SFO">
+</p>
+<p align="center"><sub>Boston (left) and San Francisco (right). Trains are real (BART and Caltrain from their timetables); the games and planes shown use the preview modes.</sub></p>
+
 ## Cities
 
 | City | Transit | Sports | Airport |
